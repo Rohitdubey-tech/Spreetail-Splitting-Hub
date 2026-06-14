@@ -1,0 +1,27 @@
+# Node dependencies
+node_modules/
+package-lock.json
+
+# Build directories
+dist/
+build/
+
+# Local SQLite Database files
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Environment configuration (secrets)
+.env
+.env.local
+backend/.env
+
+# Logs and OS files
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.idea/

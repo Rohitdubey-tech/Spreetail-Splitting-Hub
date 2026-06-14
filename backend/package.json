@@ -1,0 +1,27 @@
+{
+  "name": "spreetail-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Splitwise clone in JavaScript",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:studio": "prisma studio",
+    "test": "node src/tests/run.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.12.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "prisma": "^5.12.1"
+  }
+}
