@@ -863,13 +863,40 @@ export const Dashboard = () => {
               {importResult ? (
                 /* Success and Anomaly Log Report */
                 <div className="card glass" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '16px' }}>
-                    <h2 style={{ fontSize: '1.4rem', color: 'var(--color-positive)', fontWeight: 800, marginBottom: '8px' }}>
-                      🎉 Import Successful!
-                    </h2>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                      Created group <strong>{importResult.groupName}</strong>.
-                    </p>
+                  <div style={{ 
+                    borderBottom: '1px solid var(--border-light)', 
+                    paddingBottom: '16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '16px'
+                  }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.4rem', color: 'var(--color-positive)', fontWeight: 800, marginBottom: '8px' }}>
+                        🎉 Import Successful!
+                      </h2>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                        Created group <strong>{importResult.groupName}</strong>.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setImportResult(null)}
+                      >
+                        Import Another File
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                          setActiveGroupId(importResult.groupId);
+                          setActiveTab('groups');
+                        }}
+                      >
+                        Go to Workspace &rarr;
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
@@ -930,23 +957,7 @@ export const Dashboard = () => {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '14px', marginTop: '12px' }}>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setImportResult(null)}
-                    >
-                      Import Another File
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {
-                        setActiveGroupId(importResult.groupId);
-                        setActiveTab('groups');
-                      }}
-                    >
-                      Go to Imported Workspace &rarr;
-                    </button>
-                  </div>
+                  {/* Action buttons moved to the top header for better above-the-fold visibility */}
                 </div>
               ) : (
                 /* Paste Text Area Form */
