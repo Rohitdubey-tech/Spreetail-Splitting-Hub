@@ -77,6 +77,38 @@ export const Dashboard = () => {
     }
   };
 
+  const handleDownloadReport = () => {
+    if (!importResult) return;
+    
+    let text = `# Spreetail Splitting Hub - Ingestion Report\n\n`;
+    text += `### Group Created: ${importResult.groupName}\n`;
+    text += `Group ID: ${importResult.groupId}\n\n`;
+    text += `## Summary Metrics\n`;
+    text += `- Rows Processed: ${importResult.totalRows}\n`;
+    text += `- Expenses Imported: ${importResult.importedExpenses}\n`;
+    text += `- Settlements Imported: ${importResult.importedSettlements}\n\n`;
+    
+    text += `## Anomaly Log & Resolutions\n\n`;
+    if (importResult.anomalies.length === 0) {
+      text += `No anomalies detected. All rows parsed cleanly.\n`;
+    } else {
+      text += `| Row | Type | Field | Description | Action |\n`;
+      text += `|---|---|---|---|---|\n`;
+      importResult.anomalies.forEach(a => {
+        text += `| ${a.row} | ${a.type} | ${a.field} | ${a.message} | ${a.action} |\n`;
+      });
+    }
+    
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `import_report_${importResult.groupId}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const fetchGroups = async () => {
     try {
       const res = await axios.get(`${apiBaseUrl}/groups`);
@@ -881,6 +913,13 @@ export const Dashboard = () => {
                       </p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleDownloadReport}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        📥 Download Report
+                      </button>
                       <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setImportResult(null)}
