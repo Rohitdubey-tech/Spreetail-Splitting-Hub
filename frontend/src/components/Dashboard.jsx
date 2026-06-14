@@ -60,6 +60,7 @@ export const Dashboard = () => {
 
     setImportLoading(true);
     setImportError('');
+    setError(''); // Clear general workspace access errors
     setImportResult(null);
 
     try {
@@ -326,7 +327,7 @@ export const Dashboard = () => {
         <nav className="nav-tabs">
           <button 
             className={`nav-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('dashboard'); setActiveGroupId(null); }}
+            onClick={() => { setActiveTab('dashboard'); setActiveGroupId(null); setError(''); }}
           >
             🏠 Home Hub
           </button>
@@ -334,6 +335,7 @@ export const Dashboard = () => {
             className={`nav-tab-btn ${activeTab === 'groups' ? 'active' : ''}`}
             onClick={() => { 
               setActiveTab('groups');
+              setError('');
               if (!activeGroupId && groups.length > 0) {
                 setActiveGroupId(groups[0].id);
               }
@@ -343,7 +345,7 @@ export const Dashboard = () => {
           </button>
           <button 
             className={`nav-tab-btn ${activeTab === 'import' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('import'); setActiveGroupId(null); }}
+            onClick={() => { setActiveTab('import'); setActiveGroupId(null); setError(''); }}
           >
             📥 Import CSV
           </button>

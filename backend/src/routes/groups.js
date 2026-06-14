@@ -462,6 +462,12 @@ router.post('/import-csv', authenticateToken, async (req, res) => {
       if (u) groupMembers.push(u);
     }
 
+    // Ensure the importing user (authenticated user) is a member of the group
+    const memberUserIds = Array.from(new Set([
+      req.user.id,
+      ...groupMembers.map(u => u.id)
+    ]));
+
     // Create the group
     const groupName = "Co-living Flatmates (Imported)";
     const groupDesc = "Imported from expenses_export.csv";
@@ -470,7 +476,7 @@ router.post('/import-csv', authenticateToken, async (req, res) => {
         name: groupName,
         description: groupDesc,
         members: {
-          create: groupMembers.map(u => ({ userId: u.id }))
+          create: memberUserIds.map(userId => ({ userId }))
         }
       }
     });
