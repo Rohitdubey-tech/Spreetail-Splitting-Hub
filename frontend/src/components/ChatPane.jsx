@@ -27,7 +27,9 @@ export const ChatPane = ({ expenseId, expenseTitle, onClose }) => {
   }, [expenseId, apiBaseUrl]);
 
   useEffect(() => {
-    const socket = io('http://localhost:3001');
+    const socket = io(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:3001'
+      : 'https://spreetail-splitting-hub.onrender.com');
     socketRef.current = socket;
 
     socket.emit('join_expense', { expenseId });
