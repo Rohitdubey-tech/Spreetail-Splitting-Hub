@@ -48,6 +48,34 @@ export const Dashboard = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteError, setInviteError] = useState('');
 
+  // CSV Import States
+  const [csvText, setCsvText] = useState('');
+  const [importResult, setImportResult] = useState(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState('');
+
+  const handleCSVImport = async (e) => {
+    e.preventDefault();
+    if (!csvText.trim()) return;
+
+    setImportLoading(true);
+    setImportError('');
+    setImportResult(null);
+
+    try {
+      const res = await axios.post(`${apiBaseUrl}/groups/import-csv`, {
+        csvText: csvText.trim()
+      });
+      setImportResult(res.data);
+      setCsvText('');
+      await fetchGroups();
+    } catch (err) {
+      setImportError(err.response?.data?.error || 'Failed to import CSV');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const fetchGroups = async () => {
     try {
       const res = await axios.get(`${apiBaseUrl}/groups`);
@@ -313,6 +341,12 @@ export const Dashboard = () => {
           >
             👥 Groups Workspace {activeGroupId && `(${groups.find(g => g.id === activeGroupId)?.name || ''})`}
           </button>
+          <button 
+            className={`nav-tab-btn ${activeTab === 'import' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('import'); setActiveGroupId(null); }}
+          >
+            📥 Import CSV
+          </button>
         </nav>
 
         {user && (
@@ -340,7 +374,7 @@ export const Dashboard = () => {
             </div>
           )}
 
-          {activeTab === 'dashboard' ? (
+          {activeTab === 'dashboard' && (
             /* ================= VIEW A: HOME DASHBOARD HUB ================= */
             <div className="main-feed" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '40px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -418,8 +452,9 @@ export const Dashboard = () => {
                 )}
               </div>
             </div>
+          )}
 
-          ) : (
+          {activeTab === 'groups' && (
             /* ================= VIEW B: GROUPS WORKSPACE ================= */
             <div className="dashboard-content" style={{ gridTemplateColumns: '260px 1fr 340px' }}>
               
@@ -808,6 +843,192 @@ export const Dashboard = () => {
                 <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)', gridColumn: 'span 2' }}>
                   Please select a group from the switcher panel to view details.
                 </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'import' && (
+            <div className="main-feed" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '40px' }}>
+              <div>
+                <h1 className="group-title" style={{ fontSize: '2rem', marginBottom: '8px' }}>Ingest Expense CSV</h1>
+                <p className="group-desc" style={{ marginBottom: '28px' }}>
+                  Upload or paste your CSV data. The parser will automatically normalize names, convert currencies (e.g. USD to INR @ 83.0), correct rounding adjustments, detect duplicates, classify settlements, and log anomalies.
+                </p>
+              </div>
+
+              {importError && <div className="error-banner">{importError}</div>}
+
+              {importResult ? (
+                /* Success and Anomaly Log Report */
+                <div className="card glass" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '16px' }}>
+                    <h2 style={{ fontSize: '1.4rem', color: 'var(--color-positive)', fontWeight: 800, marginBottom: '8px' }}>
+                      🎉 Import Successful!
+                    </h2>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Created group <strong>{importResult.groupName}</strong>.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+                      <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Rows Processed</span>
+                      <strong style={{ fontSize: '1.5rem', fontFamily: 'var(--font-display)' }}>{importResult.totalRows}</strong>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+                      <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Expenses Imported</span>
+                      <strong style={{ fontSize: '1.5rem', fontFamily: 'var(--font-display)', color: 'var(--color-primary)' }}>{importResult.importedExpenses}</strong>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+                      <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Settlements Imported</span>
+                      <strong style={{ fontSize: '1.5rem', fontFamily: 'var(--font-display)', color: 'var(--color-positive)' }}>{importResult.importedSettlements}</strong>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>Anomaly Log & Resolutions Report</h3>
+                    {importResult.anomalies.length === 0 ? (
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                        No anomalies detected. All rows were parsed cleanly.
+                      </p>
+                    ) : (
+                      <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid var(--border-glass)', borderRadius: '10px', background: 'rgba(0,0,0,0.1)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+                              <th style={{ padding: '12px' }}>Row</th>
+                              <th style={{ padding: '12px' }}>Type</th>
+                              <th style={{ padding: '12px' }}>Anomaly Description</th>
+                              <th style={{ padding: '12px' }}>Resolution Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importResult.anomalies.map((a, i) => (
+                              <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                <td style={{ padding: '10px 12px', fontWeight: 600 }}>{a.row}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    backgroundColor: a.type === 'CRITICAL' ? 'var(--color-negative-bg)' : a.type === 'WARNING' ? 'rgba(225, 140, 90, 0.15)' : 'rgba(255,255,255,0.05)',
+                                    color: a.type === 'CRITICAL' ? 'var(--color-negative)' : a.type === 'WARNING' ? 'var(--color-primary)' : 'var(--text-secondary)'
+                                  }}>
+                                    {a.type}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{a.message}</td>
+                                <td style={{ padding: '10px 12px', fontWeight: 700, color: a.action === 'SKIPPED' ? 'var(--color-negative)' : 'var(--color-positive)' }}>{a.action}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '14px', marginTop: '12px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setImportResult(null)}
+                    >
+                      Import Another File
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        setActiveGroupId(importResult.groupId);
+                        setActiveTab('groups');
+                      }}
+                    >
+                      Go to Imported Workspace &rarr;
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Paste Text Area Form */
+                <form onSubmit={handleCSVImport} className="card glass" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Paste CSV Content</label>
+                    <textarea
+                      className="form-input"
+                      style={{
+                        height: '240px',
+                        fontFamily: 'monospace',
+                        fontSize: '0.85rem',
+                        lineHeight: 1.5,
+                        resize: 'vertical',
+                        padding: '16px'
+                      }}
+                      placeholder="date,description,paid_by,amount,currency,split_type,split_with,split_details,notes&#10;2026-02-01,February rent,Aisha,48000,INR,equal,&quot;Aisha;Rohan;Priya;Meera&quot;,,"
+                      value={csvText}
+                      onChange={(e) => setCsvText(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setCsvText(`date,description,paid_by,amount,currency,split_type,split_with,split_details,notes
+2026-02-01,February rent,Aisha,48000,INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-03,Groceries BigBasket,Priya,2340,INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-05,Wifi bill Feb,Rohan,1199,INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-08,Dinner at Marina Bites,Dev,3200,INR,equal,"Aisha;Rohan;Priya;Dev",,Dev visiting for the weekend
+2026-02-08,dinner - marina bites,Dev,3200,INR,equal,"Aisha;Rohan;Priya;Dev",,
+2026-02-10,Electricity Feb,Aisha,"1,200",INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-12,Maid salary Feb,Meera,3000,INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-14,Movie night snacks,priya,640,INR,equal,"Aisha;Rohan;Priya",,Meera skipped
+2026-02-15,Cylinder refill,Rohan,899.995,INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-18,Groceries DMart,Priya S,1875,INR,equal,"Aisha;Rohan;Priya;Meera",,
+2026-02-20,Aisha birthday cake,Rohan,1500,INR,unequal,"Rohan;Priya;Meera","Rohan 700; Priya 400; Meera 400",Aisha not charged obviously
+2026-02-22,House cleaning supplies,,780,INR,equal,"Aisha;Rohan;Priya;Meera",,can't remember who paid
+2026-02-25,Rohan paid Aisha back,Rohan,5000,INR,,Aisha,,this is a settlement not an expense??
+2026-02-28,Pizza Friday,Aisha,1440,INR,percentage,"Aisha;Rohan;Priya;Meera","Aisha 30%; Rohan 30%; Priya 30%; Meera 20%",percentages might be off
+01/03/2026,March rent,Aisha,48000,INR,equal,"Aisha;Rohan;Priya;Meera",,
+03/03/2026,Groceries BigBasket,Meera,2810,INR,equal,"Aisha;Rohan;Priya;Meera",,
+05/03/2026,Wifi bill Mar,Rohan,1199,INR,equal,"Aisha;Rohan;Priya;Meera",,
+08/03/2026,Goa flights,Aisha,32400,INR,equal,"Aisha;Rohan;Priya;Dev",,trip starts!
+09/03/2026,Goa villa booking,Dev,540,USD,equal,"Aisha;Rohan;Priya;Dev",,booked on intl site
+10/03/2026,Beach shack lunch,Rohan,84,USD,equal,"Aisha;Rohan;Priya;Dev",,
+10/03/2026,Scooter rentals,Priya,3600,INR,share,"Aisha;Rohan;Priya;Dev","Aisha 1; Rohan 2; Priya 1; Dev 2",Rohan and Dev took the bigger ones
+11/03/2026,Parasailing,Dev,150,USD,equal,"Aisha;Rohan;Priya;Dev;Dev's friend Kabir",,Kabir joined for the day
+11/03/2026,Dinner at Thalassa,Aisha,2400,INR,equal,"Aisha;Rohan;Priya;Dev",,
+11/03/2026,Thalassa dinner,Rohan,2450,INR,equal,"Aisha;Rohan;Priya;Dev",,Aisha also logged this I think hers is wrong
+12/03/2026,Parasailing refund,Dev,-30,USD,equal,"Aisha;Rohan;Priya;Dev",,one slot got cancelled
+Mar 14,Airport cab,rohan ,1100,INR,equal,"Aisha;Rohan;Priya;Dev",,
+15/03/2026,Groceries DMart,Priya,2105,,equal,"Aisha;Rohan;Priya;Meera",,forgot to set currency
+18/03/2026,Electricity Mar,Aisha, 1450 ,INR,equal,"Aisha;Rohan;Priya;Meera",,
+20/03/2026,Maid salary Mar,Meera,3000,INR,equal,"Aisha;Rohan;Priya;Meera",,
+22/03/2026,Dinner order Swiggy,Priya,0,INR,equal,"Aisha;Rohan;Priya;Meera",,counted twice earlier - fixing later
+25/03/2026,Weekend brunch,Meera,2200,INR,percentage,"Aisha;Rohan;Priya;Meera","Aisha 30%; Rohan 30%; Priya 30%; Meera 20%",
+28/03/2026,Meera farewell dinner,Aisha,4800,INR,equal,"Aisha;Rohan;Priya;Meera",,Meera moving out Sunday :(
+04/05/2026,Deep cleaning service,Rohan,2500,INR,equal,"Aisha;Rohan;Priya",,is this April 5 or May 4? format is a mess
+2026-04-01,April rent,Aisha,48000,INR,share,"Aisha;Rohan;Priya","Aisha 2; Rohan 1; Priya 1",Aisha took Meera's room too
+2026-04-02,Groceries BigBasket,Priya,2640,INR,equal,"Aisha;Rohan;Priya;Meera",,oops Meera still in the group list
+2026-04-05,Wifi bill Apr,Rohan,1199,INR,equal,"Aisha;Rohan;Priya",,
+2026-04-08,Sam deposit share,Sam,15000,INR,equal,Aisha,,Sam moving in! paid Aisha his deposit
+2026-04-10,Housewarming drinks,Sam,3100,INR,equal,"Aisha;Rohan;Priya;Sam",,
+2026-04-12,Electricity Apr,Aisha,1380,INR,equal,"Aisha;Rohan;Priya;Sam",,
+2026-04-15,Groceries DMart,Sam,1990,INR,equal,"Aisha;Rohan;Priya;Sam",,
+2026-04-18,Furniture for common room,Aisha,12000,INR,equal,"Aisha;Rohan;Priya;Sam","Aisha 1; Rohan 1; Priya 1; Sam 1",split_type says equal but someone added shares anyway
+2026-04-20,Maid salary Apr,Priya,3000,INR,equal,"Aisha;Rohan;Priya;Sam",,`);
+                      }}
+                    >
+                      📄 Load Demo CSV Data
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={importLoading}
+                    >
+                      {importLoading ? 'Processing...' : 'Ingest & Import CSV'}
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
           )}
