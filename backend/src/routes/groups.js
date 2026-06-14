@@ -462,6 +462,14 @@ router.post('/import-csv', authenticateToken, async (req, res) => {
       if (u) groupMembers.push(u);
     }
 
+    // Verify that the importing user exists in the database (handles database resets on transient deploys)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+    if (!dbUser) {
+      return res.status(401).json({ error: 'Your session has expired because the database was reset. Please Sign Out and Sign In again to refresh your account.' });
+    }
+
     // Ensure the importing user (authenticated user) is a member of the group
     const memberUserIds = Array.from(new Set([
       req.user.id,
